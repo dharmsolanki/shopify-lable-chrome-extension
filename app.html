@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Shipping Label Maker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f4f6;
+    }
+
+    .wrap {
+      display: flex;
+      gap: 24px;
+      padding: 24px;
+      align-items: flex-start;
+    }
+
+    .panel {
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      width: 380px;
+    }
+
+    .panel h3 {
+      margin: 12px 0 6px;
+      font-size: 14px;
+    }
+
+    .panel label {
+      display: block;
+      font-size: 12px;
+      margin-top: 8px;
+      color: #444;
+    }
+
+    .panel input[type=text],
+    .panel input[type=number],
+    .panel textarea {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    #toRaw {
+      height: 110px;
+      resize: vertical;
+    }
+
+    #fromRaw {
+      height: 80px;
+      resize: vertical;
+    }
+
+    #status {
+      font-size: 12px;
+      margin-top: 6px;
+      min-height: 16px;
+      color: #b45309;
+    }
+
+    .btns {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      padding: 8px 14px;
+      border: 0;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    #printBtn {
+      background: #111;
+      color: #fff;
+    }
+
+    #clearBtn {
+      background: #fee2e2;
+    }
+
+    /* 101.6mm x 152.4mm (4x6 in) */
+    #label {
+      width: 101.6mm;
+      height: 152.4mm;
+      background: #fff;
+      color: #000;
+      border: 1px solid #000;
+      padding: 4mm;
+      display: flex;
+      flex-direction: column;
+      gap: 3mm;
+      overflow: hidden;
+      flex-shrink: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Header */
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 3mm;
+      padding-bottom: 3mm;
+      border-bottom: 0.8mm solid #000;
+    }
+
+    .top-left {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    #pOrderTag {
+      font-size: 9pt;
+      font-weight: bold;
+      letter-spacing: 0.4mm;
+    }
+
+    #pOrder {
+      font-size: 18pt;
+      font-weight: bold;
+      line-height: 1.1;
+      word-break: break-all;
+    }
+
+    #pPay {
+      min-width: 38mm;
+      border: 0.9mm solid #000;
+      text-align: center;
+      font-weight: bold;
+      font-size: 16pt;
+      padding: 3mm 2mm;
+      line-height: 1.1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Ship To */
+    .shipto {
+      min-width: 0;
+    }
+
+    #pToName,
+    #pToAddr {
+      overflow-wrap: anywhere;
+    }
+
+    .shipto {
+      flex: 1;
+      border: 0.9mm solid #000;
+      padding: 4mm;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .chip {
+      align-self: flex-start;
+      background: #000;
+      color: #fff;
+      font-size: 10pt;
+      font-weight: bold;
+      letter-spacing: 0.5mm;
+      padding: 1mm 3mm;
+    }
+
+    #pToName {
+      font-size: 22pt;
+      font-weight: bold;
+      margin-top: 4mm;
+      line-height: 1.15;
+    }
+
+    #pToAddr {
+      font-size: 15pt;
+      margin-top: 3mm;
+      line-height: 1.3;
+    }
+
+    .bottom-row {
+      margin-top: auto;
+      padding-top: 3mm;
+      display: flex;
+      flex-direction: column;
+      gap: 2mm;
+    }
+
+    #pToPin {
+      align-self: flex-start;
+      background: #000;
+      color: #fff;
+      font-size: 26pt;
+      font-weight: bold;
+      letter-spacing: 0.6mm;
+      padding: 1.5mm 4mm;
+    }
+
+    #pToPin:empty,
+    #pToPhone:empty {
+      display: none;
+    }
+
+    #pToPhone {
+      font-size: 17pt;
+      font-weight: bold;
+    }
+
+    /* Weight / Contents */
+    .info {
+      display: flex;
+      gap: 3mm;
+    }
+
+    #pWeight,
+    #pItem {
+      flex: 1;
+      border: 0.5mm solid #000;
+      padding: 1.5mm 2mm;
+      font-size: 11pt;
+      font-weight: bold;
+      text-align: center;
+      display: none;
+    }
+
+    #pWeight {
+      flex: 0 0 26mm;
+    }
+
+    /* Note */
+    #pNote {
+      display: none;
+      text-align: center;
+      font-weight: bold;
+      font-size: 12pt;
+      border: 0.7mm dashed #000;
+      padding: 1.5mm;
+    }
+
+    /* From */
+    .from {
+      border: 0.6mm solid #000;
+      padding: 2.5mm 3mm;
+      display: none;
+    }
+
+    .from .tag {
+      font-size: 9pt;
+      font-weight: bold;
+      letter-spacing: 0.4mm;
+    }
+
+    #pFromName {
+      font-size: 11pt;
+      font-weight: bold;
+      margin-top: 1mm;
+    }
+
+    #pFromAddr {
+      font-size: 9.5pt;
+      margin-top: 0.5mm;
+      line-height: 1.3;
+      white-space: pre-line;
+    }
+
+    @media print {
+      @page {
+        size: 104mm 150mm;
+        margin: 0;
+      }
+
+      html,
+      body {
+        width: 104mm;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+      }
+
+      .panel {
+        display: none !important;
+      }
+
+      .wrap {
+        display: block;
+        padding: 0;
+        margin: 0;
+        height: 0;
+      }
+
+      #label {
+        position: absolute;
+        top: 3mm;
+        left: 6mm;
+        width: 91mm;
+        height: 141mm;
+        margin: 0;
+        border: 0;
+        overflow: hidden;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      #label {
+        gap: 2mm;
+        padding: 3mm;
+      }
+
+      .top {
+        padding-bottom: 2mm;
+      }
+
+      #pOrder {
+        font-size: 16pt;
+      }
+
+      #pPay {
+        font-size: 14pt;
+        padding: 2mm;
+      }
+
+      .shipto {
+        padding: 3mm;
+      }
+
+      #pToName {
+        font-size: 18pt;
+        margin-top: 2mm;
+      }
+
+      #pToAddr {
+        font-size: 13pt;
+        margin-top: 2mm;
+      }
+
+      .bottom-row {
+        padding-top: 2mm;
+        gap: 1mm;
+      }
+
+      #pToPin {
+        font-size: 22pt;
+        padding: 1mm 3mm;
+      }
+
+      #pToPhone {
+        font-size: 14pt;
+      }
+
+      #pWeight,
+      #pItem {
+        font-size: 10pt;
+        padding: 1mm;
+      }
+
+      #pNote {
+        font-size: 10pt;
+        padding: 1mm;
+      }
+
+      .from {
+        padding: 2mm 3mm;
+      }
+
+      #pFromName {
+        font-size: 10pt;
+      }
+
+      #pFromAddr {
+        font-size: 9pt;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="panel">
+      <h3>TO (Shopify se address paste kar)</h3>
+      <textarea id="toRaw"
+        placeholder="Naresh Gupta, 12 Diwalibanagr, Manjalpur, 390011 Vadodara Gujarat, India, +919724332952"></textarea>
+      <div id="status"></div>
+
+      <label>Order no.</label>
+      <input type="text" id="orderNo">
+      <label>COD amount (khali = PREPAID)</label>
+      <input type="text" id="cod" min="0">
+      <label>Weight kg (optional)</label>
+      <input type="number" id="weight" min="0" step="0.01">
+      <label>Contents (optional)</label>
+      <input type="text" id="item" placeholder="e.g. Soap x 3">
+      <label><input type="checkbox" id="fragile"> Handle with care</label>
+
+      <h3>FROM (ek baar bhar, auto-save)</h3>
+      <textarea id="fromRaw" placeholder="Line 1: Business naam&#10;Line 2: Address&#10;Line 3: Phone"></textarea>
+
+      <div class="btns">
+        <button id="printBtn">Print</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+    </div>
+
+    <div id="label">
+      <div class="top">
+        <div class="top-left">
+          <div id="pOrderTag"></div>
+          <div id="pOrder"></div>
+        </div>
+        <div id="pPay"></div>
+      </div>
+
+      <div class="shipto">
+        <div class="chip">SHIP TO</div>
+        <div id="pToName"></div>
+        <div id="pToAddr"></div>
+        <div class="bottom-row">
+          <div id="pToPin"></div>
+          <div id="pToPhone"></div>
+        </div>
+      </div>
+
+      <div class="info">
+        <div id="pWeight"></div>
+        <div id="pItem"></div>
+      </div>
+      <div id="pNote">HANDLE WITH CARE</div>
+
+      <div class="from" id="pFrom">
+        <div class="tag">FROM</div>
+        <div id="pFromName"></div>
+        <div id="pFromAddr"></div>
+      </div>
+    </div>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+
+</html>
